@@ -20,47 +20,41 @@ int main(int argc, char *argv[])
     }
 
     //allocate memory for the jpg block
-    int *buffer = malloc (512 * sizeof(char));
+    unsigned char buffer [512];
 
     int i = -1;
-    char *filename = NULL;
+    char filename [8];
     FILE *img = NULL;
 
 
-    //read a jpg block and store it in buffer
+
     do
     {
-        free(buffer);
-        fread(&buffer, 1, 512, raw);
+        //read a raw block and store it in buffer
+        fread(buffer, sizeof(buffer), 1, raw);
 
+        //if the block indicates a jpg file
         if(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff && (buffer[3] & 0xf0) == 0xe0)
         {
-
+            //start the counter from 0
             i++;
 
-            if(i == 0)
-            {
-                sprintf(filename, "%03i.jpg", i);
-
-                img = fopen(filename, "w");
-
-                fwrite(buffer, sizeof(buffer), 1, img);
-            }
-            else
+            //if its not the first jpg encountered
+            if(i != 0)
             {
                 fclose(img);
-
-                sprintf(filename, "%03i.jpg", i);
-
-                img = fopen(filename, "w");
-
-                fwrite(buffer, sizeof(buffer), 1, img);
             }
+
+            sprintf(filename, "%03i.jpg", i);
+
+            img = fopen(filename, "w");
+
+            fwrite(buffer, sizeof(buffer), 1, img);
+
         }
 
         else if(feof(raw))
         {
-            free(buffer);
 
             fclose(img);
 
@@ -71,7 +65,11 @@ int main(int argc, char *argv[])
             i = -2;
         }
 
-        else if(i <= 0)
+        else if(i < 0)
+        {
+            continue;
+        }
+        else
         {
             fwrite(buffer, sizeof(buffer), 1, img);
         }
